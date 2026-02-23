@@ -1,60 +1,108 @@
-// ==================== DOM ELEMENTS ==================== //
+// ==================== DOM ELEMENTS & NAVIGATION ==================== //
 const hamburger = document.querySelector(".hamburger");
 const navLinks = document.querySelector(".nav-links");
 const navLink = document.querySelectorAll(".nav-link");
+const navbar = document.querySelector(".navbar");
 
-// ==================== MOBILE MENU ==================== //
-hamburger.addEventListener("click", () => {
-  navLinks.classList.toggle("active");
-});
+// Mobile Menu
+hamburger.addEventListener("click", () => navLinks.classList.toggle("active"));
+navLink.forEach((link) => link.addEventListener("click", () => navLinks.classList.remove("active")));
 
-// Close menu when a nav link is clicked
-navLink.forEach((link) => {
-  link.addEventListener("click", () => {
-    navLinks.classList.remove("active");
-  });
-});
-
-// ==================== SMOOTH SCROLLING ==================== //
+// Smooth Scroll
 document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
   anchor.addEventListener("click", function (e) {
-    const href = this.getAttribute("href");
-    if (href !== "#") {
+    if (this.getAttribute("href") !== "#") {
       e.preventDefault();
-      const target = document.querySelector(href);
-      if (target) {
-        target.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-      }
+      document.querySelector(this.getAttribute("href")).scrollIntoView({ behavior: "smooth", block: "start" });
     }
   });
 });
 
-// ==================== NAVBAR SCROLL EFFECT ==================== //
-const navbar = document.querySelector(".navbar");
-let lastScrollTop = 0;
-
+// Navbar Styling on Scroll
 window.addEventListener("scroll", () => {
   let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-
-  if (scrollTop > 100) {
-    navbar.style.boxShadow = "0 4px 15px rgba(0, 0, 0, 0.15)";
+  if (scrollTop > 50) {
+    navbar.style.boxShadow = "0 4px 20px rgba(0,0,0,0.8)";
+    navbar.style.borderBottom = "1px solid var(--fire-engine-red)";
   } else {
-    navbar.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.08)";
+    navbar.style.boxShadow = "none";
+    navbar.style.borderBottom = "1px solid var(--chocolate-cosmos)";
   }
-
-  lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
 });
 
-// ==================== ANIMATION ON SCROLL ==================== //
-const observerOptions = {
-  threshold: 0.1,
-  rootMargin: "0px 0px -50px 0px",
-};
+// Active Link Highlight
+window.addEventListener("scroll", () => {
+  let current = "";
+  document.querySelectorAll("section").forEach((section) => {
+    if (pageYOffset >= section.offsetTop - 200) current = section.getAttribute("id");
+  });
+  navLink.forEach((link) => {
+    link.style.color = "";
+    link.style.textShadow = "";
+    if (link.getAttribute("href").slice(1) === current) {
+      link.style.color = "var(--fire-engine-red)";
+      link.style.textShadow = "var(--glow)";
+    }
+  });
+});
 
-const observer = new IntersectionObserver(function (entries) {
+// ==================== INTERACTIVE TYPING EFFECT ==================== //
+const textArray = [
+  "ASIC/VLSI Design Engineer",
+  "SoC Verification Specialist",
+  "Mixed-Signal Architect"
+];
+let textIndex = 0;
+let charIndex = 0;
+let isDeleting = false;
+const typeWriterElement = document.getElementById("typewriter");
+
+function type() {
+  const currentText = textArray[textIndex];
+  if (isDeleting) {
+    typeWriterElement.textContent = currentText.substring(0, charIndex - 1);
+    charIndex--;
+  } else {
+    typeWriterElement.textContent = currentText.substring(0, charIndex + 1);
+    charIndex++;
+  }
+
+  let typeSpeed = isDeleting ? 50 : 100;
+
+  if (!isDeleting && charIndex === currentText.length) {
+    typeSpeed = 2000; // Pause at end
+    isDeleting = true;
+  } else if (isDeleting && charIndex === 0) {
+    isDeleting = false;
+    textIndex = (textIndex + 1) % textArray.length;
+    typeSpeed = 500; // Pause before typing new text
+  }
+  setTimeout(type, typeSpeed);
+}
+if(typeWriterElement) setTimeout(type, 1000);
+
+// ==================== 3D CARD TILT EFFECT ==================== //
+const cards = document.querySelectorAll('.interactive-card');
+cards.forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateX = ((y - centerY) / centerY) * -5; // Max 5 deg tilt
+    const rotateY = ((x - centerX) / centerX) * 5;
+    
+    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+  });
+
+  card.addEventListener('mouseleave', () => {
+    card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+  });
+});
+
+// ==================== SCROLL OBSERVER (REVEAL ANIMATION) ==================== //
+const observer = new IntersectionObserver((entries) => {
   entries.forEach((entry) => {
     if (entry.isIntersecting) {
       entry.target.style.opacity = "1";
@@ -62,195 +110,119 @@ const observer = new IntersectionObserver(function (entries) {
       observer.unobserve(entry.target);
     }
   });
-}, observerOptions);
+}, { threshold: 0.1, rootMargin: "0px 0px -50px 0px" });
 
-// Observe cards and items
-document
-  .querySelectorAll(
-    ".project-card, .experience-card, .skill-category, .achievement-box",
-  )
-  .forEach((el) => {
-    el.style.opacity = "0";
-    el.style.transform = "translateY(20px)";
-    el.style.transition = "opacity 0.6s ease, transform 0.6s ease";
-    observer.observe(el);
-  });
-
-// ==================== ACTIVE NAV LINK ON SCROLL ==================== //
-window.addEventListener("scroll", () => {
-  let current = "";
-
-  const sections = document.querySelectorAll("section");
-  sections.forEach((section) => {
-    const sectionTop = section.offsetTop;
-    const sectionHeight = section.clientHeight;
-
-    if (pageYOffset >= sectionTop - 200) {
-      current = section.getAttribute("id");
-    }
-  });
-
-  navLink.forEach((link) => {
-    link.classList.remove("active");
-    if (link.getAttribute("href").slice(1) === current) {
-      link.style.color = "var(--primary-color)";
-    } else {
-      link.style.color = "";
-    }
-  });
+document.querySelectorAll(".project-card, .experience-card, .skill-category, .timeline-content").forEach((el) => {
+  el.style.opacity = "0";
+  el.style.transform = "translateY(30px)";
+  el.style.transition = "opacity 0.6s ease, transform 0.6s ease";
+  observer.observe(el);
 });
 
-// ==================== FORM FUNCTIONALITY ==================== //
-// Add smooth scroll for buttons
-const buttons = document.querySelectorAll(".btn");
-buttons.forEach((btn) => {
-  btn.addEventListener("mouseover", function () {
-    this.style.transform = "translateY(-2px)";
+// ==================== HERO CANVAS BACKGROUND (NETWORK/CIRCUIT) ==================== //
+const canvas = document.getElementById("hero-canvas");
+if (canvas) {
+  const ctx = canvas.getContext("2d");
+  let particlesArray;
+
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  let mouse = { x: null, y: null, radius: 150 };
+  window.addEventListener("mousemove", (e) => {
+    mouse.x = e.x;
+    mouse.y = e.y;
   });
 
-  btn.addEventListener("mouseout", function () {
-    this.style.transform = "translateY(0)";
-  });
-});
+  class Particle {
+    constructor(x, y, directionX, directionY, size, color) {
+      this.x = x; this.y = y;
+      this.directionX = directionX; this.directionY = directionY;
+      this.size = size; this.color = color;
+    }
+    draw() {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2, false);
+      ctx.fillStyle = this.color;
+      ctx.fill();
+    }
+    update() {
+      if (this.x > canvas.width || this.x < 0) this.directionX = -this.directionX;
+      if (this.y > canvas.height || this.y < 0) this.directionY = -this.directionY;
+      this.x += this.directionX;
+      this.y += this.directionY;
+      this.draw();
+    }
+  }
 
-// ==================== CONTACT LINK HANDLERS ==================== //
-const emailLink = document.querySelector('a[href^="mailto:"]');
-const phoneLink = document.querySelector('a[href^="tel:"]');
+  function init() {
+    particlesArray = [];
+    let numberOfParticles = (canvas.height * canvas.width) / 9000;
+    for (let i = 0; i < numberOfParticles; i++) {
+      let size = (Math.random() * 2) + 1;
+      let x = (Math.random() * ((innerWidth - size * 2) - (size * 2)) + size * 2);
+      let y = (Math.random() * ((innerHeight - size * 2) - (size * 2)) + size * 2);
+      let directionX = (Math.random() * 1) - 0.5;
+      let directionY = (Math.random() * 1) - 0.5;
+      let color = '#650304'; // Blood red nodes
+      particlesArray.push(new Particle(x, y, directionX, directionY, size, color));
+    }
+  }
 
-if (emailLink) {
-  emailLink.addEventListener("click", function (e) {
-    // Email link will work normally
-    console.log("Email link clicked");
-  });
-}
+  function connect() {
+    for (let a = 0; a < particlesArray.length; a++) {
+      for (let b = a; b < particlesArray.length; b++) {
+        let distance = ((particlesArray[a].x - particlesArray[b].x) * (particlesArray[a].x - particlesArray[b].x)) + 
+                       ((particlesArray[a].y - particlesArray[b].y) * (particlesArray[a].y - particlesArray[b].y));
+        if (distance < (canvas.width / 7) * (canvas.height / 7)) {
+          let opacityValue = 1 - (distance / 20000);
+          ctx.strokeStyle = `rgba(215, 21, 21, ${opacityValue})`; // Fire engine red lines
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(particlesArray[a].x, particlesArray[a].y);
+          ctx.lineTo(particlesArray[b].x, particlesArray[b].y);
+          ctx.stroke();
+        }
+      }
+    }
+  }
 
-if (phoneLink) {
-  phoneLink.addEventListener("click", function (e) {
-    // Phone link will work on mobile
-    console.log("Phone link clicked");
+  function animate() {
+    requestAnimationFrame(animate);
+    ctx.clearRect(0, 0, innerWidth, innerHeight);
+    for (let i = 0; i < particlesArray.length; i++) {
+      particlesArray[i].update();
+    }
+    connect();
+  }
+
+  window.addEventListener("resize", () => {
+    canvas.width = innerWidth;
+    canvas.height = innerHeight;
+    init();
   });
+
+  init();
+  animate();
 }
 
 // ==================== SCROLL TO TOP BUTTON ==================== //
 const scrollToTopBtn = document.createElement("button");
 scrollToTopBtn.classList.add("scroll-to-top");
 scrollToTopBtn.innerHTML = "↑";
-scrollToTopBtn.style.cssText = `
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    width: 50px;
-    height: 50px;
-    background: linear-gradient(135deg, #0066cc, #00a8ff);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 1.5rem;
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 99;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease;
-`;
-
 document.body.appendChild(scrollToTopBtn);
 
 window.addEventListener("scroll", () => {
-  if (window.pageYOffset > 300) {
-    scrollToTopBtn.style.display = "flex";
-  } else {
-    scrollToTopBtn.style.display = "none";
-  }
+  scrollToTopBtn.style.display = window.pageYOffset > 300 ? "flex" : "none";
 });
 
-scrollToTopBtn.addEventListener("click", () => {
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth",
-  });
-});
+scrollToTopBtn.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 
-scrollToTopBtn.addEventListener("mouseover", () => {
-  scrollToTopBtn.style.transform = "scale(1.1)";
-});
-
-scrollToTopBtn.addEventListener("mouseout", () => {
-  scrollToTopBtn.style.transform = "scale(1)";
-});
-
-// ==================== PAGE LOAD ANIMATION ==================== //
+// Initial Fade In
 window.addEventListener("load", () => {
   document.body.style.opacity = "0";
   setTimeout(() => {
-    document.body.style.transition = "opacity 0.5s ease";
+    document.body.style.transition = "opacity 0.8s ease";
     document.body.style.opacity = "1";
   }, 100);
 });
-
-// ==================== KEYBOARD NAVIGATION ==================== //
-document.addEventListener("keydown", (e) => {
-  // ESC to close mobile menu
-  if (e.key === "Escape") {
-    if (navLinks.classList.contains("active")) {
-      navLinks.classList.remove("active");
-    }
-  }
-});
-
-// ==================== DARK MODE TOGGLE (Optional Enhancement) ==================== //
-const prefersDarkScheme = window.matchMedia("(prefers-color-scheme: dark)");
-
-function enableDarkMode() {
-  document.documentElement.style.setProperty("--bg-light", "#1a1a1a");
-  document.documentElement.style.setProperty("--bg-white", "#2d2d2d");
-  document.documentElement.style.setProperty("--text-dark", "#ffffff");
-  document.documentElement.style.setProperty("--text-light", "#cccccc");
-  localStorage.setItem("darkMode", "enabled");
-}
-
-function disableDarkMode() {
-  document.documentElement.style.setProperty("--bg-light", "#f5f7fa");
-  document.documentElement.style.setProperty("--bg-white", "#ffffff");
-  document.documentElement.style.setProperty("--text-dark", "#1a1a1a");
-  document.documentElement.style.setProperty("--text-light", "#666666");
-  localStorage.setItem("darkMode", "disabled");
-}
-
-// Check localStorage for dark mode preference
-if (
-  localStorage.getItem("darkMode") === "enabled" ||
-  (localStorage.getItem("darkMode") === null && prefersDarkScheme.matches)
-) {
-  enableDarkMode();
-}
-
-// ==================== PERFORMANCE OPTIMIZATION ==================== //
-// Lazy loading for images (if added in future)
-if ("IntersectionObserver" in window) {
-  const imageObserver = new IntersectionObserver((entries, observer) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        const img = entry.target;
-        img.src = img.dataset.src;
-        img.classList.remove("lazy");
-        imageObserver.unobserve(img);
-      }
-    });
-  });
-
-  document
-    .querySelectorAll("img[data-src]")
-    .forEach((img) => imageObserver.observe(img));
-}
-
-// ==================== CONSOLE LOG ==================== //
-console.log(
-  "%c Welcome to Humbal Hammad Portfolio! ",
-  "font-size: 14px; font-weight: bold; color: #0066cc; background: #f5f7fa; padding: 10px;",
-);
-console.log(
-  "%c Let's build something amazing together! ",
-  "font-size: 12px; color: #666; font-style: italic;",
-);
